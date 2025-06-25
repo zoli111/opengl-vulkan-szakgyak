@@ -1,9 +1,7 @@
 // https://learnopengl.com/Getting-started/OpenGL
 
-// forditas: g++ main.cpp -lglfw -lGL
+// forditas: g++ program.cpp -lglfw -lGL
 
-// a glviewporthoz kell
-#include <GL/gl.h>
 // glfw lesz a fo library, amit openglhez hasznalni fokunk
 #include <GLFW/glfw3.h>
 
