@@ -41,6 +41,10 @@ int main() {
 
     // shader letrehozasa
     Shader shader = Shader(vertex_path, fragment_path);
+    
+    // uniform beallitas
+    //shader.use(); // az uniformhoz kell hasznalni a programot
+   // shader.setFloat("horizontal_offset", 0.2f);
 
     float vertices[] = {
         -0.5, -0.5, 0.0,
