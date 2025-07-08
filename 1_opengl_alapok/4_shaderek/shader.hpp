@@ -1,10 +1,10 @@
 #ifndef SHADER_HPP
 #define SHADER_HPP
-#include <cstddef>
 #define GL_GLEXT_PROTOTYPES
 
 #include <GL/glcorearb.h>
 #include <string>
+#include <cstddef>
 #include <fstream>
 #include <sstream>
 #include <iostream>
@@ -97,17 +97,5 @@ private:
         }
     }
 };
-
-
-
-
-
-
-
-
-
-
-
-
 
 #endif
