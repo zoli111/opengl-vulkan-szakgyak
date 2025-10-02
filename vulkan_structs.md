@@ -97,6 +97,7 @@ VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamicRendering = {
 };
 // Majd amikor létrehozzuk a device-t
 VkDeviceCreateInfo createInfo = {
+	// ...
 	.pNext = &dynamicRendering
 	// ...
 }
@@ -110,6 +111,7 @@ const std::vector<const char*> validationLayers = {
 };
 // A device létrehozásánál
 VkDeviceCreateInfo createInfo = {
+	// ...
 	.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
 	.ppEnabledLayerNames = validationLayers.data();
 	// ...
