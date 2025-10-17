@@ -1,6 +1,6 @@
 # Descriptorok használata
 
-A Vulkan dokumentáció ezt mondja:
+A Vulkan dokumentáció szépen összefoglalja:
 
 > A descriptor is an opaque data structure representing a shader resource such as a buffer, buffer view, image view, sampler, or combined image sampler. Descriptors are organized into descriptor sets, which are bound during command recording for use in subsequent drawing commands.
 
@@ -11,10 +11,6 @@ A descriptorok setekben vannak csoportosítva, és az ugyanolyan elrendezésű d
 ## 1. VkDescriptorPool
 
 A descriptor setek allokálásához a GPU memóriában egy descriptor poolra van szükség.
-
-### Manuális használat
-
-TODO: megírni
 
 ### Használat a VkCourse keretrendszerrel
 
@@ -47,6 +43,75 @@ descPool.Create(
 - Pl. itt lefoglalunk 100-100-at, és maximum 100 setet lehet létrehozni
   - Ez bőven több, mint amit használni fogunk
 
+### Manuális használat
+
+Először egy createInfo-t kell létrehozni hozzá
+
+**Definíció**
+```cpp
+typedef struct VkDescriptorPoolCreateInfo {
+	VkStructureType                sType;
+	const void*                    pNext;
+	VkDescriptorPoolCreateFlags    flags;
+	uint32_t                       maxSets;
+	uint32_t                       poolSizeCount;
+	const VkDescriptorPoolSize*    pPoolSizes;
+	} VkDescriptorPoolCreateInfo;
+```
+- `sType`: Vulkanban szokásos típusmeghatározás, itt legyen `VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO`
+- `pNext`: nem használjuk, legyen nullptr
+- `flags`: extra opciók, nem fogjuk használni
+- `maxSets`: maximum hány descriptor setet tartalmazhat
+- `poolSizeCount`: `VkDescriptorPoolSize` struktúrák száma
+- `pPoolSizes`: `VkDescriptorPoolSize` struktúrák tömbje
+	- C++-ban egyszerűbb vektort használni (lásd példa)
+
+**Példa**
+```cpp
+
+std::vector<VkDescriptorPoolSize> descPoolSizes;
+// Amennyit és amilyen típusú descriptort szeretnénk létrehozni
+descPoolSizes.push_back(
+	{
+		.type               = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+		.descriptorCount    = 50,
+	}
+);
+// ...
+
+VkDescriptorPoolCreateInfo poolCreateInfoManual{
+	.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
+	.pNext = nullptr,
+	.flags = 0,
+	.maxSets = 100,
+	.poolSizeCount = static_cast<uint32_t>(descPoolSizes.size()),
+	.pPoolSizes = descPoolSizes.data(),
+}
+```
+
+Majd ha ez kész akkor megcsinálhatjuk magát a poolt
+
+**Definíció**
+```cpp
+VkResult vkCreateDescriptorPool(
+	VkDevice                             device,
+	const VkDescriptorPoolCreateInfo*    pCreateInfo,
+	const VkAllocationCallbacks*         pAllocator,
+	VkDescriptorPool*                    pDescriptorPool
+);
+```
+
+**Példa**
+```cpp
+VkDescriptorPool descPoolManual = VK_NULL_HANDLE;
+VkResult result = vkCreateDescriptorPool(
+	VkDevice                             device,
+	const VkDescriptorPoolCreateInfo*    poolCreateInfoManual,
+	const VkAllocationCallbacks*         nullptr,
+	VkDescriptorPool*                    descPoolManual
+);
+```
+
 ## 2. VkDescriptorSetLayoutBinding
 
 TODO: leírás hozzáadása
@@ -59,11 +124,11 @@ Mivel ez csak egy darab struktúra, ezt a VkCourse-ban is manuálisan kell létr
 
 ```cpp
 typedef struct VkDescriptorSetLayoutBinding {
-	uint32_t           binding;
-	VkDescriptorType   descriptorType;
-	uint32_t           descriptorCount;
-	VkShaderStageFlags stageFlags;
-	const VkSampler*   pImmutableSamplers;
+	uint32_t              binding;
+	VkDescriptorType      descriptorType;
+	uint32_t              descriptorCount;
+	VkShaderStageFlags    stageFlags;
+	const VkSampler*      pImmutableSamplers;
 } VkDescriptorSetLayoutBinding;
 ```
 
@@ -82,17 +147,15 @@ typedef struct VkDescriptorSetLayoutBinding {
 
 ```cpp
 VkDescriptorSetLayoutBinding descSetLayoutBinding{
-	.binding            = 0,
-	.descriptorType     = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-	.descriptorCount    = 1,
-	.stageFlags         = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-	.pImmutableSamplers = nullptr,
+	.binding               = 0,
+	.descriptorType        = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+	.descriptorCount       = 1,
+	.stageFlags            = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+	.pImmutableSamplers    = nullptr,
 };
 ```
 
 ## 3. VkDescriptorSetLayout
-
-### Használat manuálisan
 
 TODO: leírás hozzáadása
 
@@ -118,11 +181,66 @@ VkDescriptorSetLayout descSetLayout = descPool.createLayout(
 ```
 - Tipp: itt is működik a kapcsos zárójeles inicializáció
 
-## 4. VkDescriptorSet
-
-TODO: leírás hozzáadása
-
 ### Használat manuálisan
+
+**Definíció**
+```cpp
+typedef struct VkDescriptorSetLayoutCreateInfo {
+	VkStructureType                        sType;
+	const void*                            pNext;
+	VkDescriptorSetLayoutCreateFlags       flags;
+	uint32_t                               bindingCount;
+	const VkDescriptorSetLayoutBinding*    pBindings;
+} VkDescriptorSetLayoutCreateInfo;
+```
+- `sType`: legyen `VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO`
+- `pNext`: nem használjuk, legyen nullptr
+- `flags`: extra opciók, legyen 0
+- `bindingCount`: hány darab VkDescriptorSetLayoutBinding jön ide
+- `pBindings`: bindingok tömbje
+
+**Példa**
+
+```cpp
+vector<VkDescriptorSetLayoutBinding> bindings;
+
+VkDescriptorSetLayoutCreateInfo layoutInfo{
+    .sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+    .pNext        = nullptr,
+    .flags        = 0,
+    .bindingCount = 1,
+    .pBindings    = {descSetLayoutBinding},
+};
+```
+- Mivel a példában nyilván egy bindingot használunk, így 1 lesz a `bindingCount`
+
+Majd létre tudjuk hozni a layoutot
+
+**Definíció**
+```cpp
+VkResult vkCreateDescriptorSetLayout(
+	VkDevice                                  device,
+	const VkDescriptorSetLayoutCreateInfo*    pCreateInfo,
+	const VkAllocationCallbacks*              pAllocator,
+	VkDescriptorSetLayout*                    pSetLayout);
+```
+- `device`: logikai eszköz
+- `pCreateInfo`: a createInfo, amit korábban létrehoztunk
+- `pAllocator`: legyen nullptr
+- `pSetLayout`: referencia a változóra, ami a layout handle-t fogja tartalmazni
+
+**Példa**
+```cpp
+VkDescriptorSetLayout layout = VK_NULL_HANDLE;
+VkResult result = vkCreateDescriptorSetLayout(
+	device,
+	&layoutInfo,
+	nullptr,
+	&layout
+);
+```
+
+## 4. VkDescriptorSet
 
 TODO: leírás hozzáadása
 
@@ -145,5 +263,61 @@ DescriptorSetMgmt DescriptorPool::createSet(
 ```cpp
 DescriptorSetMgmt descSet = descPool.createSet(
 	VkDescriptorSetLayout descSetLayout
+);
+```
+
+### Használat manuálisan
+
+Ellőször kell egy allocateInfo-t létrehozni
+
+**Definíció**
+```cpp
+typedef struct VkDescriptorSetAllocateInfo {
+	VkStructureType                 sType;
+	const void*                     pNext;
+	VkDescriptorPool                descriptorPool;
+	uint32_t                        descriptorSetCount;
+	const VkDescriptorSetLayout*    pSetLayouts;
+} VkDescriptorSetAllocateInfo;
+```
+- `sType`: legyen VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO
+- `pNext`: legyen csak nullptr
+- `descriptorPool`: a használt descriptor pool
+- `descriptorSetCount`: hány setet akarunk létrehozni
+- `pSetLayouts`: referencia/tömb a desciptor set layout-okra
+
+**Példa**
+```cpp
+VkDescriptorSetAllocateInfo allocInfo{
+.sType                 = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+.pNext                 = nullptr,
+.descriptorPool        = descPoolManual,
+.descriptorSetCount    = 1,
+.pSetLayouts           = &layout,
+};
+```
+
+Majd létrehozhatjuk a set(ek)et is
+
+**Definíció**
+```cpp
+VkResult vkAllocateDescriptorSets(
+	VkDevice                              device,
+	const VkDescriptorSetAllocateInfo*    pAllocateInfo,
+	VkDescriptorSet*                      pDescriptorSets
+);
+```
+- `device`: logikai eszköz
+- `pAllocateInfo`: az allocInfo, amit létrehoztunk korábban
+- `pDescriptorSets`: egy (vagy egy tömbnyi) VkDescriptorSet handle
+
+
+**Példa**
+```cpp
+VkDescriptorSet descSetManual = VK_NULL_HANDLE;
+VkResult result = vkAllocateDescriptorSets(
+	device,
+	&allocInfo,
+	&descSetManual
 );
 ```
