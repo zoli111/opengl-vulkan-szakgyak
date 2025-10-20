@@ -138,7 +138,7 @@ typedef struct VkDescriptorSetLayoutBinding {
 - `descriptorCount`: descriptorok száma
 - `stageFlags`: a rajzolás melyik fázisában érhető el
 	- [Stage-ek listája](https://registry.khronos.org/vulkan/specs/latest/man/html/VkShaderStageFlagBits.html)
-	- Ha több is kell, akkor bitenként össze kell ÉS-elni őket (|)
+	- Ha több is kell, akkor bitenként össze kell VAGY-olni őket (|)
 - `pImmutableSamplers`: ha sampler típusú a descriptor, itt meg lehet adni olyan samplereket, amiket utána nem lehet változtatni
 	- Általában ezt nem fogjuk használni (TODO: ez valóban így van?)
 
@@ -320,4 +320,175 @@ VkResult result = vkAllocateDescriptorSets(
 	&allocInfo,
 	&descSetManual
 );
+```
+
+## 5. Buffer
+
+### Használat a VkCourse keretrendszerrel
+
+Létrehozás
+
+**Definíció**
+```cpp
+BufferInfo BufferInfo::Create(
+	const VkPhysicalDevice phyDevice,
+	const VkDevice device,
+	VkDeviceSize size,
+	VkBufferUsageFlags usageFlags
+);
+```
+- `phyDevice`: fizikai eszköz
+- `device`: logikai eszköz
+- `size`: méret (bájtban), tipp: `sizeof()`
+- `usageFlags`: [Flagek](https://registry.khronos.org/vulkan/specs/latest/man/html/VkBufferUsageFlagBits.html)
+
+**Példa**
+```cpp
+BufferInfo ubo;
+ubo = BufferInfo::Create(phyDevice, device, sizeof(glm::mat4), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+```
+
+Feltöltés adatokkal
+
+**Definíció**
+```cpp
+void Update(
+	const VkDevice device,
+	const void* inputPtr,
+	size_t size
+);
+```
+- `device`: logikai eszköz
+- `inputPtr`: referencia vagy pointer arra a C++ objektumra, aminek az adataival töltjük fel
+- `size`: adatok mérete, `sizeof()`
+
+**Példa**
+```cpp
+glm::mat4 matrix = glm::mat4(1.0f); // ezt transzformálhatjuk, ahogy akarjuk
+ubo.Update(device, &matrix, sizeof(matrix));
+```
+
+### Használat manuálisan
+
+Először egy createInfo-t kell létrehozni
+```cpp
+typedef struct VkBufferCreateInfo {
+	VkStructureType        sType;
+	const void*            pNext;
+	VkBufferCreateFlags    flags;
+	VkDeviceSize           size;
+	VkBufferUsageFlags     usage;
+	VkSharingMode          sharingMode;
+	uint32_t               queueFamilyIndexCount;
+	const uint32_t*        pQueueFamilyIndices;
+} VkBufferCreateInfo;
+```
+- `sType`: VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO
+- `pNext`: extra funkciók, legyen nullptr
+- `flags`: [Flagek](https://registry.khronos.org/vulkan/specs/latest/man/html/VkBufferUsageFlagBits.html)
+- `size`: a leendő buffer mérete
+- `usage`: mire lesz használva a buffer
+	- [Használat](https://registry.khronos.org/vulkan/specs/latest/man/html/VkBufferUsageFlagBits.html)
+	- Bitenként össze kell VAGY-olni
+- `sharingMode`: [Leírás](https://registry.khronos.org/vulkan/specs/latest/man/html/VkSharingMode.html)
+- `queueFamilyIndexCount`: TODO: leírni
+- `pQueueFamilyIndices`: TODO: leírni
+
+**Példa**
+```cpp
+glm::mat4 matrix = glm::mat4(1.0f);
+
+VkBufferCreateInfo bufferCreateInfo{
+	sType                    = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+	pNext                    = nullptr,
+	flags                    = 0,
+	size                     = sizeof(matrix),
+	usage                    = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+	sharingMode              = VK_SHARING_MODE_EXCLUSIVE,
+	queueFamilyIndexCount    = 0,
+	pQueueFamilyIndices      = nullptr,
+};
+```
+
+Utána egy függvénnyel létre lehet hozni buffert
+
+**Definíció**
+```cpp
+VkResult vkCreateBuffer(
+	VkDevice                        device,
+	const VkBufferCreateInfo*       pCreateInfo,
+	const VkAllocationCallbacks*    pAllocator,
+	VkBuffer*                       pBuffer
+);
+```
+- `device`: logikai eszköz
+- `pCreateInfo`: a létrehozott createInfo
+- `pAllocator`: legyen nullptr, de ha valamilyen más memóriaallokátort akarunk használni akkor ott van
+- `pBuffer`: ebbe a handle-be kerül a buffer
+
+**Példa**
+```cpp
+VkBuffer buffer = VK_NULL_HANDLE;
+VkResult result = vkCreateBuffer(
+	device,
+	bufferCreateInfo,
+	nullptr,
+	&buffer
+);
+```
+
+Ahhoz, hogy a bufferbe tudjunk adatot másolni kell memóriát is lefoglalni hozzá
+
+Ennek első lépése lekérni a buffer memóriaigényét
+
+**Definíció**
+```cpp
+void vkGetBufferMemoryRequirements(
+	VkDevice                 device,
+	VkBuffer                 buffer,
+	VkMemoryRequirements*    pMemoryRequirements
+);
+```
+
+**Példa**
+```cpp
+VkMemoryRequirements memRequirements = VK_NULL_HANDLE;
+vkGetBufferMemoryRequirements(
+	device,
+	buffer,
+	&memRequirements
+);
+```
+
+Utána kell csinálni egy allocInfo-t a memóriához
+
+**Definíció**
+```cpp
+typedef struct VkMemoryAllocateInfo {
+	VkStructureType    sType;
+	const void*        pNext;
+	VkDeviceSize       allocationSize;
+	uint32_t           memoryTypeIndex;
+} VkMemoryAllocateInfo;
+```
+- `sType`: legyen `VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO`
+- `pNext`: extra funkciók, maradhat nullptr
+- `allocationSize`: a VkMemoryRequirements-ből le kell kérni
+- `memoryTypeIndex`: szintén a VkMemoryRequirements-ből kell lekérni
+	- Kicsit bonyolult, a Vulkan Tutorialból van rá példa függvény
+
+**Példa**
+```cpp
+// memoryTypeIndex megszerzésére való függvény
+uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) {
+	VkPhysicalDeviceMemoryProperties memProperties;
+	vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
+	for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
+		if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
+			return i;
+		}
+	}
+	throw std::runtime_error("failed to find suitable memory type!");
+}
+
 ```
