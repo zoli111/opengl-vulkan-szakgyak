@@ -45,7 +45,7 @@ descPool.Create(
 
 ### Manuális használat
 
-Először egy createInfo-t kell létrehozni hozzá
+#### CreateInfo létrehozása
 
 **Definíció**
 ```cpp
@@ -79,7 +79,7 @@ descPoolSizes.push_back(
 );
 // ...
 
-VkDescriptorPoolCreateInfo poolCreateInfoManual{
+VkDescriptorPoolCreateInfo poolCreateInfo{
 	.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
 	.pNext = nullptr,
 	.flags = 0,
@@ -89,7 +89,7 @@ VkDescriptorPoolCreateInfo poolCreateInfoManual{
 }
 ```
 
-Majd ha ez kész akkor megcsinálhatjuk magát a poolt
+#### DescriptorPool létrehozása
 
 **Definíció**
 ```cpp
@@ -103,12 +103,12 @@ VkResult vkCreateDescriptorPool(
 
 **Példa**
 ```cpp
-VkDescriptorPool descPoolManual = VK_NULL_HANDLE;
+VkDescriptorPool descPool = VK_NULL_HANDLE;
 VkResult result = vkCreateDescriptorPool(
 	VkDevice                             device,
-	const VkDescriptorPoolCreateInfo*    poolCreateInfoManual,
+	const VkDescriptorPoolCreateInfo*    poolCreateInfo,
 	const VkAllocationCallbacks*         nullptr,
-	VkDescriptorPool*                    descPoolManual
+	VkDescriptorPool*                    descPool
 );
 ```
 
@@ -214,7 +214,7 @@ VkDescriptorSetLayoutCreateInfo layoutInfo{
 ```
 - Mivel a példában nyilván egy bindingot használunk, így 1 lesz a `bindingCount`
 
-Majd létre tudjuk hozni a layoutot
+#### DescriptorSetLayout létrehozása
 
 **Definíció**
 ```cpp
@@ -268,7 +268,7 @@ DescriptorSetMgmt descSet = descPool.createSet(
 
 ### Használat manuálisan
 
-Ellőször kell egy allocateInfo-t létrehozni
+#### AllocInfo létrehozása
 
 **Definíció**
 ```cpp
@@ -291,13 +291,13 @@ typedef struct VkDescriptorSetAllocateInfo {
 VkDescriptorSetAllocateInfo allocInfo{
 .sType                 = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
 .pNext                 = nullptr,
-.descriptorPool        = descPoolManual,
+.descriptorPool        = descPool,
 .descriptorSetCount    = 1,
 .pSetLayouts           = &layout,
 };
 ```
 
-Majd létrehozhatjuk a set(ek)et is
+#### DescriptorSetek létrehozása
 
 **Definíció**
 ```cpp
@@ -314,19 +314,19 @@ VkResult vkAllocateDescriptorSets(
 
 **Példa**
 ```cpp
-VkDescriptorSet descSetManual = VK_NULL_HANDLE;
+VkDescriptorSet descSet = VK_NULL_HANDLE;
 VkResult result = vkAllocateDescriptorSets(
 	device,
 	&allocInfo,
-	&descSetManual
+	&descSet
 );
 ```
 
-## 5. Buffer
+## 5. Buffer/memória
 
 ### Használat a VkCourse keretrendszerrel
 
-Létrehozás
+#### Létrehozás
 
 **Definíció**
 ```cpp
@@ -344,11 +344,11 @@ BufferInfo BufferInfo::Create(
 
 **Példa**
 ```cpp
-BufferInfo ubo;
-ubo = BufferInfo::Create(phyDevice, device, sizeof(glm::mat4), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+BufferInfo buffer;
+buffer = BufferInfo::Create(phyDevice, device, sizeof(glm::mat4), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 ```
 
-Feltöltés adatokkal
+#### Feltöltés adatokkal
 
 **Definíció**
 ```cpp
@@ -365,12 +365,13 @@ void Update(
 **Példa**
 ```cpp
 glm::mat4 matrix = glm::mat4(1.0f); // ezt transzformálhatjuk, ahogy akarjuk
-ubo.Update(device, &matrix, sizeof(matrix));
+buffer.Update(device, &matrix, sizeof(matrix));
 ```
 
 ### Használat manuálisan
 
-Először egy createInfo-t kell létrehozni
+#### Buffer createInfo létrehozása
+
 ```cpp
 typedef struct VkBufferCreateInfo {
 	VkStructureType        sType;
@@ -391,26 +392,26 @@ typedef struct VkBufferCreateInfo {
 	- [Használat](https://docs.vulkan.org/refpages/latest/refpages/source/VkBufferUsageFlagBits.html)
 	- Bitenként össze kell VAGY-olni
 - `sharingMode`: [Leírás](https://docs.vulkan.org/refpages/latest/refpages/source/VkSharingMode.html)
-- `queueFamilyIndexCount`: TODO: leírni
-- `pQueueFamilyIndices`: TODO: leírni
+- `queueFamilyIndexCount`: csak akkor kell, ha több queue-t használunk
+- `pQueueFamilyIndices`: szintén
 
 **Példa**
 ```cpp
 glm::mat4 matrix = glm::mat4(1.0f);
 
 VkBufferCreateInfo bufferCreateInfo{
-	sType                    = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-	pNext                    = nullptr,
-	flags                    = 0,
-	size                     = sizeof(matrix),
-	usage                    = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-	sharingMode              = VK_SHARING_MODE_EXCLUSIVE,
-	queueFamilyIndexCount    = 0,
-	pQueueFamilyIndices      = nullptr,
+	.sType                    = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+	.pNext                    = nullptr,
+	.flags                    = 0,
+	.size                     = sizeof(matrix),
+	.usage                    = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+	.sharingMode              = VK_SHARING_MODE_EXCLUSIVE,
+	.queueFamilyIndexCount    = 0,
+	.pQueueFamilyIndices      = nullptr,
 };
 ```
 
-Utána egy függvénnyel létre lehet hozni buffert
+#### Buffer létrehozása
 
 **Definíció**
 ```cpp
@@ -437,9 +438,7 @@ VkResult result = vkCreateBuffer(
 );
 ```
 
-Ahhoz, hogy a bufferbe tudjunk adatot másolni kell memóriát is lefoglalni hozzá
-
-Ennek első lépése lekérni a buffer memóriaigényét
+#### BufferMemoryRequirements megszerzése
 
 **Definíció**
 ```cpp
@@ -460,7 +459,7 @@ vkGetBufferMemoryRequirements(
 );
 ```
 
-Utána kell csinálni egy allocInfo-t a memóriához
+#### Memória allocInfo létrehozása
 
 **Definíció**
 ```cpp
@@ -501,7 +500,7 @@ VkMemoryAllocateInfo allocInfo{
 };
 ```
 
-Ezután már tudunk is memóriát lefoglalni
+#### Memória lefoglalása
 
 **Definíció**
 ```cpp
@@ -520,11 +519,10 @@ VkResult vkAllocateMemory(
 **Példa**
 ```cpp
 VkDeviceMemory memory = VK_NULL_HANDLE;
-VkResult result = VkResult vkAllocateMemory(device, allocInfo, nullptr, &memory;
-);
+VkResult result = vkAllocateMemory(device, allocInfo, nullptr, &memory);
 ```
 
-Most már össze lehet kötni a buffert a memóriával
+#### Adatok feltöltése a memóriába
 
 **Definíció**
 ```cpp
@@ -545,7 +543,7 @@ VkResult vkMapMemory(
 - `flags`: legyen 0
 - `ppData`: void* objektum, amivel elérhetjük a mappelt memóriaterületet
 
-**Használat**
+**Példa**
 ```cpp
 void* data;
 vkMapMemory(device, memory, 0, bufferCreateInfo.size, 0, &data);
@@ -554,4 +552,23 @@ memcpy(data, &matrix, sizeof(matrix));
 vkUnmapMemory(device, memory);
 ```
 
-És most már elérhetjük a bufferbe feltöltött adatokat
+#### Buffer összekötése a memóriával
+
+**Definíció**
+```cpp
+VkResult vkBindBufferMemory(
+	VkDevice          device,
+	VkBuffer          buffer,
+	VkDeviceMemory    memory,
+	VkDeviceSize      memoryOffset
+);
+```
+- `device`: logikai eszköz
+- `buffer`: a buffer, amit használni akarunk
+- `memory`: a lefoglalt `VkDeviceMemory` objektum
+- `memoryOffset`: offset bájtokban, a memory elejétől kezdve
+
+**Példa**
+```cpp
+VkResult result = vkBindBufferMemory(device, buffer, memory, 0);
+```
