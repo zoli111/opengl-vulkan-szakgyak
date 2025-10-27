@@ -26,7 +26,7 @@ descPool.Create(
 
 - `device`: logikai eszköz
 - `countPerType`: milyen típusú descriptorból hányat szeretnénk (az összes setet beleértve, összesen)
-  - [Descriptor típusok](https://registry.khronos.org/vulkan/specs/latest/man/html/VkDescriptorType.html)
+  - [Descriptor típusok](https://docs.vulkan.org/refpages/latest/refpages/source/VkDescriptorType.html)
 - `maxSetCount`: összesen hány setet szeretnénk
 
 **Példa**
@@ -137,7 +137,7 @@ typedef struct VkDescriptorSetLayoutBinding {
 - `descriptorType`: descriptorok típusa
 - `descriptorCount`: descriptorok száma
 - `stageFlags`: a rajzolás melyik fázisában érhető el
-	- [Stage-ek listája](https://registry.khronos.org/vulkan/specs/latest/man/html/VkShaderStageFlagBits.html)
+	- [Stage-ek listája](https://docs.vulkan.org/refpages/latest/refpages/source/VkShaderStageFlagBits.html)
 	- Ha több is kell, akkor bitenként össze kell VAGY-olni őket (|)
 - `pImmutableSamplers`: ha sampler típusú a descriptor, itt meg lehet adni olyan samplereket, amiket utána nem lehet változtatni
 	- Általában ezt nem fogjuk használni (TODO: ez valóban így van?)
@@ -340,7 +340,7 @@ BufferInfo BufferInfo::Create(
 - `phyDevice`: fizikai eszköz
 - `device`: logikai eszköz
 - `size`: méret (bájtban), tipp: `sizeof()`
-- `usageFlags`: [Flagek](https://registry.khronos.org/vulkan/specs/latest/man/html/VkBufferUsageFlagBits.html)
+- `usageFlags`: [Flagek](https://docs.vulkan.org/refpages/latest/refpages/source/VkBufferUsageFlagBits.html)
 
 **Példa**
 ```cpp
@@ -385,12 +385,12 @@ typedef struct VkBufferCreateInfo {
 ```
 - `sType`: VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO
 - `pNext`: extra funkciók, legyen nullptr
-- `flags`: [Flagek](https://registry.khronos.org/vulkan/specs/latest/man/html/VkBufferUsageFlagBits.html)
+- `flags`: [Flagek](https://docs.vulkan.org/refpages/latest/refpages/source/VkBufferUsageFlagBits.html)
 - `size`: a leendő buffer mérete
 - `usage`: mire lesz használva a buffer
-	- [Használat](https://registry.khronos.org/vulkan/specs/latest/man/html/VkBufferUsageFlagBits.html)
+	- [Használat](https://docs.vulkan.org/refpages/latest/refpages/source/VkBufferUsageFlagBits.html)
 	- Bitenként össze kell VAGY-olni
-- `sharingMode`: [Leírás](https://registry.khronos.org/vulkan/specs/latest/man/html/VkSharingMode.html)
+- `sharingMode`: [Leírás](https://docs.vulkan.org/refpages/latest/refpages/source/VkSharingMode.html)
 - `queueFamilyIndexCount`: TODO: leírni
 - `pQueueFamilyIndices`: TODO: leírni
 
