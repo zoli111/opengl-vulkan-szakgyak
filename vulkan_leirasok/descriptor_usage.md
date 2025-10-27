@@ -476,10 +476,12 @@ typedef struct VkMemoryAllocateInfo {
 - `allocationSize`: a VkMemoryRequirements-ből le kell kérni
 - `memoryTypeIndex`: szintén a VkMemoryRequirements-ből kell lekérni
 	- Kicsit bonyolult, a Vulkan Tutorialból van rá példa függvény
+	- [Memória típusok](https://docs.vulkan.org/refpages/latest/refpages/source/VkMemoryPropertyFlagBits.html)
 
 **Példa**
 ```cpp
 // memoryTypeIndex megszerzésére való függvény
+// Forrás: Vulkan Tutorial
 uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) {
 	VkPhysicalDeviceMemoryProperties memProperties;
 	vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
@@ -491,4 +493,65 @@ uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) {
 	throw std::runtime_error("failed to find suitable memory type!");
 }
 
+VkMemoryAllocateInfo allocInfo{
+	sType              = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+	pNext              = nullptr,
+	allocationSize     = memRequirements.size,
+	memoryTypeIndex    = findMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);,
+};
 ```
+
+Ezután már tudunk is memóriát lefoglalni
+
+**Definíció**
+```cpp
+VkResult vkAllocateMemory(
+	VkDevice                         device,
+	const VkMemoryAllocateInfo*      pAllocateInfo,
+	const VkAllocationCallbacks*     pAllocator,
+	VkDeviceMemory*                  pMemory
+);
+```
+- `device`: logikai eszköz
+- `pAllocateInfo`: A korábban létrehozott allocInfo
+- `pAllocator`: Ha más allokátort akarunk használni, itt maradhat nullptr
+- `pMemory`: A handle, amivel később hivatkozhatunk rá
+
+**Példa**
+```cpp
+VkDeviceMemory memory = VK_NULL_HANDLE;
+VkResult result = VkResult vkAllocateMemory(device, allocInfo, nullptr, &memory;
+);
+```
+
+Most már össze lehet kötni a buffert a memóriával
+
+**Definíció**
+```cpp
+VkResult vkMapMemory(
+	VkDevice            device,
+	VkDeviceMemory      memory,
+	VkDeviceSize        offset,
+	VkDeviceSize        size,
+	VkMemoryMapFlags    flags,
+	void**              ppData
+);
+```
+- `device`: logikai eszköz
+- `memory`: a memória objektum
+- `offset`: offset a memória elejétől bájtban
+- `size`: mennyi memóriát mappelünk
+	- Pl. ha egy buffernél a buffer `createInfo`-jából le lehet kérni
+- `flags`: legyen 0
+- `ppData`: void* objektum, amivel elérhetjük a mappelt memóriaterületet
+
+**Használat**
+```cpp
+void* data;
+vkMapMemory(device, memory, 0, bufferCreateInfo.size, 0, &data);
+// Most már átmásolhatjuk az adatokat
+memcpy(data, &matrix, sizeof(matrix));
+vkUnmapMemory(device, memory);
+```
+
+És most már elérhetjük a bufferbe feltöltött adatokat
